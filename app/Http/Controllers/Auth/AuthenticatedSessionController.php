@@ -22,26 +22,27 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(LoginRequest $request) 
     {
         $request->authenticate();
 
-        $request->session()->regenerate();
+        $token = $request->user()->createToken('API Token')->plainTextToken;
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return response()->json([
+            'token'=> $token,
+        ]);
+
     }
 
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request)
     {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-
-        $request->session()->regenerateToken();
-
-        return redirect('/');
+        $request->user()->tokens->each(function ($token) {
+            $token->delete();
+        });
+    
+        return response()->json(['message' => 'Logged out successfully']);
     }
 }

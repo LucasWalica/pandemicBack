@@ -14,37 +14,33 @@ use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
-    public function create(): View
+    public function store(Request $request)
     {
-        return view('auth.register');
-    }
-
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
+        // Validación de los datos de registro
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Crear un nuevo usuario
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
         ]);
 
-        event(new Registered($user));
-
+        // Autenticación del usuario
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Generar un token para el usuario usando Sanctum
+        $token = $user->createToken('API Token')->plainTextToken;
+
+        // Responder con el token de autenticación en formato JSON
+        return response()->json([
+            'message' => 'User registered successfully.',
+            'user'=> $user,
+            'token' => $token,
+        ], 201); // 201 es el código HTTP para 'Creado'
     }
 }

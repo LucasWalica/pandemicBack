@@ -16,6 +16,8 @@ return new class extends Migration
            $table->string('name');
            $table->foreignId('partida_id')->constrained('partida')->onDelete('cascade');
            $table->boolean('centro_investigacion')->default(false);
+           $table->integer('coordenadasX');
+           $table->integer('coordenadasY');
            $table->integer('eVerde');
            $table->integer('eRoja');
            $table->integer('eAmarilla');
