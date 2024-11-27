@@ -9,6 +9,7 @@ class Enfermedad extends Model
 {
     use HasFactory;
 
+    protected $table = "enfermedad";
     protected $fillable = ['name', 'turnos_para_curarse', 'infeccion_a_colindates' ,'partida_id'];
 
     public function partida(){

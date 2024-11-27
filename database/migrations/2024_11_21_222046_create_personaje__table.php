@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('personaje_', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('partida_id')->constrained('partida')->onDelete('cascade');
+            $table->foreignId('partida_id')->nullable()->constrained('partida')->onDelete('cascade');
             $table->boolean('movido')->default(false);
             $table->foreignId('ciudad_id')->constrained('ciudad')->onDelete('cascade'); // Cambiado de 'id' a 'ciudad_id'
             $table->integer('turno_comienzo')->default(0);

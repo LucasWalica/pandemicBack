@@ -13,15 +13,15 @@ return new class extends Migration
     {
         Schema::create('ciudad', function (Blueprint $table) {
             $table->id();
-           $table->string('name');
+           $table->string('name')->default('desconocido');
            $table->foreignId('partida_id')->constrained('partida')->onDelete('cascade');
            $table->boolean('centro_investigacion')->default(false);
            $table->integer('coordenadasX');
            $table->integer('coordenadasY');
-           $table->integer('eVerde');
-           $table->integer('eRoja');
-           $table->integer('eAmarilla');
-           $table->integer('eAzul');
+           $table->integer('eVerde')->default(0);
+           $table->integer('eRoja')->default(0);
+           $table->integer('eAmarilla')->default(0);
+           $table->integer('eAzul')->default(0);
            $table->timestamps();
         });
     }

@@ -8,15 +8,17 @@ use Illuminate\Database\Eloquent\Model;
 class Partida extends Model
 {
     use HasFactory;
-
-    protected $fillable = ['turno', 'user_id'];
+    protected $table = "partida";
+    protected $fillable = ['turno','turno', 'user_id'];
 
     public function ciudades(){
         return $this->hasMany(Ciudad::class);
     }
-
-    public function partida(){
-        return $this->belongsTo(Partida::class);
+    public function enfermedades(){
+        return $this->hasMany(Enfermedad::class);
+    }
+    public function personajes(){
+        return $this->hasMany(Personaje::class);
     }
 
     public function scopeByUser($query, $user_id){

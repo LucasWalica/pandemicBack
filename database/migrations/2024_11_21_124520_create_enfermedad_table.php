@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->integer('turnos_para_curarse');
-            $table->integer('infeccion_a_colindantes');
+            $table->integer('infeccion_a_colindantes')->default(1);
             $table->foreignId('partida_id')->constrained('partida')->onDelete('cascade');
             $table->timestamps();
         });

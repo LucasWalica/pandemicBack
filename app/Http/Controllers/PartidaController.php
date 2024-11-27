@@ -6,6 +6,7 @@ use App\Models\Ciudad;
 use App\Models\Enfermedad;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PartidaController extends Controller
 {
@@ -19,59 +20,77 @@ class PartidaController extends Controller
     }
     // Crear una nueva partida con ciudades y enfermedades
     
+
     public function store(Request $request)
     {
-        // Validar el request
-        $validated = $request->validate([
-            'counterTurnos' => 'required|integer',
-            'jugadas' => 'required|integer',
-            'listCiudades' => 'required|array',
-            'listEnfermedades' => 'required|array',
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        // Crear la partida
-        $partida = Partida::create([
-            'turno' => 0, // El turno inicial
-            'user_id' => $validated['user_id']
-        ]);
-
-        // Crear las ciudades y asociarlas a la partida
-        foreach ($validated['listCiudades'] as $ciudadData) {
-            $ciudad = $partida->ciudades()->create([
-                'nombre' => $ciudadData['nombre'],
-                'centro_investigacion' => $ciudadData['centroInvestigacion'],
-                'coordenadasX' => $ciudadData['coordenadasX'],
-                'coordenadasY' => $ciudadData['coordenadasY'],
-                'eAmarillo' => $ciudadData['eAmarillo'],
-                'eAzul' => $ciudadData['eAzul'],
-                'eRojo' => $ciudadData['eRojo'],
-                'eVerde' => $ciudadData['eVerde'],
+        DB::beginTransaction();
+        try {
+            // Validar el request
+            $validated = $request->validate([
+                'counterTurnos' => 'required|integer',
+                'jugadas' => 'required|integer',
+                'listCiudades' => 'required|array',
+                'listEnfermedades' => 'required|array',
+                'listaPersonajes' => 'required|array',
+                'user_id' => 'required|exists:users,id',
             ]);
 
-            // Crear personajes asociados a la ciudad (si hay)
-            foreach ($ciudadData['listPersonajes'] as $personajeData) {
-                $ciudad->personajes()->create([
-                    'name' => $personajeData['name'],
-                    'movido' => $personajeData['movido'],
-                    'en_accion' => $personajeData['en_accion'],
-                    'turno_comienzo' => 0 // Este es un ejemplo, puedes ajustarlo
+            // Crear la partida
+            $partida = Partida::create([
+                'counterTurnos' => $validated['counterTurnos'], 
+                'jugadas' => $validated['jugadas'],
+                'user_id' => $validated['user_id']
+            ]);
+
+            // Crear las ciudades
+            foreach ($validated['listCiudades'] as $ciudadData) {
+                $ciudad = $partida->ciudades()->create([
+                    'name' => $ciudadData['nombre'],
+                    'partida_id'=> $partida->id,
+                    'centro_investigacion' => $ciudadData['centroInvestigacion'],
+                    'coordenadasX' => $ciudadData['coordenadasX'],
+                    'coordenadasY' => $ciudadData['coordenadasY'],
+                    'eAmarillo' => $ciudadData['eAmarillo'],
+                    'eAzul' => $ciudadData['eAzul'],
+                    'eRojo' => $ciudadData['eRojo'],
+                    'eVerde' => $ciudadData['eVerde'],
+                ]);
+
+                foreach ($ciudadData['listPersonajes'] as $personajeData) {
+                    $ciudad->personajes()->create([
+                        'name' => $personajeData['name'],
+                        'partida_id'=>$partida->id,
+                        'movido' => $personajeData['movido'],
+                        'ciudad_id'=>$ciudad->id,
+                        'en_accion' => $personajeData['en_accion'],
+                        'turno_comienzo' => $personajeData['turno_comienzo'],
+                    ]);
+                }
+            }
+
+            // Crear las enfermedades
+            foreach ($validated['listEnfermedades'] as $enfermedadData) {
+                $partida->enfermedades()->create([
+                    'name' => $enfermedadData['name'],
+                    'turnos_para_curarse' => $enfermedadData['turnosParaCurar'],
+                    'infeccion_a_colindandes' => $enfermedadData['infeccionAColindandes'],
+                    'partida_id'=>$partida->id
                 ]);
             }
-        }
 
-        // Crear las enfermedades y asociarlas a la partida
-        foreach ($validated['listEnfermedades'] as $enfermedadData) {
-            $partida->enfermedades()->create([
-                'name' => $enfermedadData['name'],
-                'turnos_para_curarse' => $enfermedadData['turnosParaCurar'],
-                'infeccion_a_colindandes' => $enfermedadData['infeccionAColindandes']
-            ]);
-        }
+            DB::commit();
+            return response()->json($partida, 201);
 
-        // Retornar la respuesta con la partida creada
-        return response()->json($partida, 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ], 500);
+        }
     }
+
+    
 
     // Obtener una partida con sus ciudades y enfermedades
     public function show($id)
