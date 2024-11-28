@@ -2,8 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Partida;
-use App\Models\Ciudad;
-use App\Models\Enfermedad;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +12,7 @@ class PartidaController extends Controller
 
     public function getPartidasList($userId){
         $user = User::findOrFail($userId);
-
+        
         $partidas = $user->partidas;
 
         return response()->json($partidas);
@@ -25,6 +24,11 @@ class PartidaController extends Controller
     {
         DB::beginTransaction();
         try {
+            
+            $user = Auth::user();
+            if (!$user) {
+                return response()->json(['error' => 'Usuario no autenticado'], 401);
+            }
             // Validar el request
             $validated = $request->validate([
                 'counterTurnos' => 'required|integer',
@@ -32,14 +36,13 @@ class PartidaController extends Controller
                 'listCiudades' => 'required|array',
                 'listEnfermedades' => 'required|array',
                 'listaPersonajes' => 'required|array',
-                'user_id' => 'required|exists:users,id',
             ]);
 
             // Crear la partida
             $partida = Partida::create([
                 'counterTurnos' => $validated['counterTurnos'], 
                 'jugadas' => $validated['jugadas'],
-                'user_id' => $validated['user_id']
+                'user_id' => $user->id
             ]);
 
             // Crear las ciudades

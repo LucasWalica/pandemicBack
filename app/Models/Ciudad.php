@@ -17,6 +17,4 @@ class Ciudad extends Model
     public function partida(){
         return $this->belongsTo(Partida::class);
     }
-
-
 }

@@ -14,7 +14,7 @@ use App\Http\Controllers\PartidaController;
 Route::group(['middleware' => 'api'], function () {
 
     Route::prefix('partidas')->group(function () {
-        Route::post('', [PartidaController::class,'store']);
+        Route::post('', [PartidaController::class,'store'])->middleware('auth:sanctum');;
         Route::get('/{id}', [PartidaController::class,'show']);
         Route::get('', [PartidaController::class,'getPartidasList']);
     });
