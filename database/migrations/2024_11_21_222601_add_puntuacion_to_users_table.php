@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->integer('puntuacion')->default(0);
+            $table->string('profilePic')->default("ninguno");
         });
     }
 
