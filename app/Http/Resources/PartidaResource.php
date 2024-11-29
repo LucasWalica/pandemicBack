@@ -19,6 +19,8 @@ class PartidaResource extends JsonResource
             "turno"=> $this->turno,
             "ciudades"=> CiudadResource::collection($this->ciudades),
             "enfermedades"=>EnfermedadResource::collection($this->enfermedades),
+            // test
+            "personajes"=>PersonajeResource::collection($this->personajes),
         ];
     }
 }
