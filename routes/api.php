@@ -16,8 +16,8 @@ Route::group(['middleware' => 'api'], function () {
 
     Route::prefix('partidas')->group(function () {
         Route::post('', [PartidaController::class,'store'])->middleware('auth:sanctum');
-        Route::get('/{id}', [PartidaController::class,'show']);
-        Route::get('', [PartidaController::class,'getPartidasList']);
+        Route::get('/{id}', [PartidaController::class,'show'])->middleware('auth:sanctum');
+        Route::get('', [PartidaController::class,'getPartidasList'])->middleware('auth:sanctum');;
     });
 
     Route::prefix('auth')->group(function () {

@@ -1,6 +1,7 @@
 <?php 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\PartidaResource;
 use App\Models\Partida;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -10,12 +11,33 @@ use Illuminate\Support\Facades\DB;
 class PartidaController extends Controller
 {
 
-    public function getPartidasList($userId){
-        $user = User::findOrFail($userId);
+    public function getPartidasList(Request $request){
         
-        $partidas = $user->partidas;
+        try {
+            $user = Auth::user();
+    
+            if (!$user) {
+                return response()->json(['error' => 'Usuario no autenticado'], 401);
+            }
+    
+            $partidas = $user->partidas;
 
-        return response()->json($partidas);
+            // Cargar las partidas con relaciones de ciudades, enfermedades y personajes
+            $partidas = $user->partidas()->with(['ciudades', 'enfermedades', 'personajes', 'ciudadColindante'])->get();
+
+           
+           return PartidaResource::collection($partidas);
+    
+        } catch (\Exception $e) {
+            // Log el error para inspeccionarlo
+            \Log::error('Error en getPartidasList: ' . $e->getMessage());
+    
+            return response()->json([
+                'error' => 'Error al obtener las partidas',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+
     }
     // Crear una nueva partida con ciudades y enfermedades
     
@@ -58,6 +80,15 @@ class PartidaController extends Controller
                     'eRojo' => $ciudadData['eRojo'],
                     'eVerde' => $ciudadData['eVerde'],
                 ]);
+                if (isset($ciudadData['listCiudadesColindantes'])) {
+                    foreach ($ciudadData['listCiudadesColindantes'] as $colindante) {
+                        // Crear la relación de ciudad colindante
+                        $ciudad->ciudadColindante()->create([
+                            'name' => $colindante['name'],
+                            'partida_id' => $partida->id,
+                        ]);
+                    }
+                }
 
                 foreach ($ciudadData['listPersonajes'] as $personajeData) {
                     $ciudad->personajes()->create([
@@ -96,9 +127,14 @@ class PartidaController extends Controller
     
 
     // Obtener una partida con sus ciudades y enfermedades
-    public function show($id)
+    public function show(Request $request)
     {
-        $partida = Partida::with(['ciudades', 'ciudades.personajes', 'enfermedades'])->findOrFail($id);
+
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no autenticado'], 401);
+        }
+        $partida = Partida::with(['ciudades', 'ciudades.personajes', 'enfermedades'])->findOrFail($user->id);
         return response()->json($partida);
     }
 }

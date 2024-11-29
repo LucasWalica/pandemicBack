@@ -17,4 +17,8 @@ class Ciudad extends Model
     public function partida(){
         return $this->belongsTo(Partida::class);
     }
+
+    public function ciudadColindante(){
+        return $this->hasMany(CiudadColindante::class);
+    }
 }
