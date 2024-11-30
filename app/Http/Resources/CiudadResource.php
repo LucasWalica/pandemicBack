@@ -17,7 +17,7 @@ class CiudadResource extends JsonResource
         return [
             'name' => $this->name,
             'listCiudadesColindantes' => CiudadColindateResource::collection($this->ciudadColindante),
-            'listPersonajes' => PersonajeResource::collection($this->personajes),
+            'listPersonajes' =>PersonajeLiteResource::collection($this->personajes),
             'coordenadasX' => $this->coordenadasX,
             'coordenadasY' => $this->coordenadasY,
             'centro_investigacion' => $this->centro_investigacion,

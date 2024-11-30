@@ -11,34 +11,44 @@ use Illuminate\Support\Facades\DB;
 class PartidaController extends Controller
 {
 
-    public function getPartidasList(Request $request){
-        
+    public function getPartidasList(Request $request)
+    {
         try {
-            $user = Auth::user();
+            \Log::info('Inicio del método getPartidasList');
     
+            // Verificar si el usuario está autenticado
+            $user = Auth::user();
             if (!$user) {
+                \Log::warning('Usuario no autenticado');
                 return response()->json(['error' => 'Usuario no autenticado'], 401);
             }
+            \Log::info('Usuario autenticado: ' . $user->id);
     
-            $partidas = $user->partidas;
-
-            // Cargar las partidas con relaciones de ciudades, enfermedades y personajes
+            // Obtener las partidas del usuario
             $partidas = $user->partidas()->with(['ciudades', 'enfermedades', 'personajes', 'ciudadColindante'])->get();
 
-           
-           return PartidaResource::collection($partidas);
+    
+            if ($partidas->isEmpty()) {
+                \Log::info('No se encontraron partidas para el usuario: ' . $user->id);
+                return response()->json(['message' => 'No se encontraron partidas'], 404);
+            }
+            \Log::info('Partidas encontradas: ' . $partidas->count());
+    
+            // Devolver las partidas utilizando el recurso
+            return PartidaResource::collection($partidas);
     
         } catch (\Exception $e) {
-            // Log el error para inspeccionarlo
+            // Registrar el error para depuración
             \Log::error('Error en getPartidasList: ' . $e->getMessage());
+            \Log::error('Trace: ' . $e->getTraceAsString());
     
             return response()->json([
                 'error' => 'Error al obtener las partidas',
                 'details' => $e->getMessage(),
             ], 500);
         }
-
     }
+    
     // Crear una nueva partida con ciudades y enfermedades
     
 
