@@ -134,8 +134,6 @@ class PartidaController extends Controller
         }
     }
 
-    
-
     // Obtener una partida con sus ciudades y enfermedades
     public function show(Request $request)
     {
