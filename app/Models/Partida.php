@@ -9,7 +9,7 @@ class Partida extends Model
 {
     use HasFactory;
     protected $table = "partida";
-    protected $fillable = ['turno', 'user_id'];
+    protected $fillable = ['user_id', 'turno'];
 
     public function ciudades(){
         return $this->hasMany(Ciudad::class);

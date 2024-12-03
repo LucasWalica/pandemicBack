@@ -16,6 +16,7 @@ class PersonajeResource extends JsonResource
     {
         return [
             "name"=> $this->name,
+            "specialSkill"=>$this->specialSKill,
             // specialSkill
             "movido"=> $this->movido,
             "ciudadEnLaQueEsta" => $this->ciudad,

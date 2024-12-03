@@ -10,7 +10,7 @@ class Personaje extends Model
     use HasFactory;
 
     protected $table="personaje_";
-    protected $fillable = ['name', 'partida_id', 'movido', 'ciudad_id', 'turno_comienzo', 'en_accion'];
+    protected $fillable = ['name','specialSKill', 'partida_id', 'movido', 'ciudad_id', 'turno_comienzo', 'en_accion'];
 
     public function ciudad(){
         return $this->belongsTo(Ciudad::class);

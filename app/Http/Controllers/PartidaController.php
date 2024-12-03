@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 use App\Http\Resources\PartidaResource;
 use App\Models\Partida;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
+use App\Models\Ciudad;
+use App\Models\CiudadColindante;
+use App\Models\Enfermedad;
+use App\Models\Personaje;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -51,80 +54,102 @@ class PartidaController extends Controller
     
     // Crear una nueva partida con ciudades y enfermedades
     
-
     public function store(Request $request)
     {
         DB::beginTransaction();
         try {
-            
             $user = Auth::user();
             if (!$user) {
                 return response()->json(['error' => 'Usuario no autenticado'], 401);
             }
+    
             // Validar el request
             $validated = $request->validate([
+                'id' => 'nullable|integer', // Se recibirá el id de la partida si existe
                 'counterTurnos' => 'required|integer',
                 'jugadas' => 'required|integer',
                 'listCiudades' => 'required|array',
                 'listEnfermedades' => 'required|array',
                 'listaPersonajes' => 'required|array',
             ]);
-
-            // Crear la partida
-            $partida = Partida::create([
-                'counterTurnos' => $validated['counterTurnos'], 
-                'jugadas' => $validated['jugadas'],
-                'user_id' => $user->id
-            ]);
-
-            // Crear las ciudades
+    
+            // Actualizar o crear la partida
+            $partida = Partida::updateOrCreate(
+                ['id' => $validated['id']], // Criterio de búsqueda
+                [
+                    'turno' => $validated['counterTurnos'],
+                    'jugadas' => $validated['jugadas'],
+                    'user_id' => $user->id
+                ]
+            );
+    
+            // Actualizar o crear las ciudades
             foreach ($validated['listCiudades'] as $ciudadData) {
-                $ciudad = $partida->ciudades()->create([
-                    'name' => $ciudadData['nombre'],
-                    'partida_id'=> $partida->id,
-                    'centro_investigacion' => $ciudadData['centroInvestigacion'],
-                    'coordenadasX' => $ciudadData['coordenadasX'],
-                    'coordenadasY' => $ciudadData['coordenadasY'],
-                    'eAmarillo' => $ciudadData['eAmarillo'],
-                    'eAzul' => $ciudadData['eAzul'],
-                    'eRojo' => $ciudadData['eRojo'],
-                    'eVerde' => $ciudadData['eVerde'],
-                ]);
+                $ciudad = Ciudad::updateOrCreate(
+                    [
+                        'name' => $ciudadData['nombre'], 
+                        'partida_id' => $partida->id // Relación con la partida
+                    ],
+                    [
+                        'centro_investigacion' => $ciudadData['centroInvestigacion'],
+                        'coordenadasX' => $ciudadData['coordenadasX'],
+                        'coordenadasY' => $ciudadData['coordenadasY'],
+                        'eAmarillo' => $ciudadData['eAmarillo'],
+                        'eAzul' => $ciudadData['eAzul'],
+                        'eRojo' => $ciudadData['eRojo'],
+                        'eVerde' => $ciudadData['eVerde'],
+                    ]
+                );
+    
+                // Actualizar o crear las ciudades colindantes
                 if (isset($ciudadData['listCiudadesColindantes'])) {
                     foreach ($ciudadData['listCiudadesColindantes'] as $colindante) {
-                        // Crear la relación de ciudad colindante
-                        $ciudad->ciudadColindante()->create([
-                            'name' => $colindante['name'],
-                            'partida_id' => $partida->id,
-                        ]);
+                        CiudadColindante::updateOrCreate(
+                            [
+                                'name' => $colindante['name'],
+                                'ciudad_id' => $ciudad->id, // Relación con la ciudad
+                                'partida_id' => $partida->id,
+                            ],
+                            [] // No hay otros campos para actualizar
+                        );
                     }
                 }
-
+    
+                // Actualizar o crear los personajes
                 foreach ($ciudadData['listPersonajes'] as $personajeData) {
-                    $ciudad->personajes()->create([
-                        'name' => $personajeData['name'],
-                        'partida_id'=>$partida->id,
-                        'movido' => $personajeData['movido'],
-                        'ciudad_id'=>$ciudad->id,
-                        'en_accion' => $personajeData['en_accion'],
-                        'turno_comienzo' => $personajeData['turno_comienzo'],
-                    ]);
+                    Personaje::updateOrCreate(
+                        [
+                            'name' => $personajeData['name'],
+                            'ciudad_id' => $ciudad->id, // Relación con la ciudad
+                            'partida_id' => $partida->id,
+                        ],
+                        [
+                            'specialSKill' => $personajeData['specialSkill'],
+                            'movido' => $personajeData['movido'],
+                            'en_accion' => $personajeData['en_accion'],
+                            'turno_comienzo' => $personajeData['turno_comienzo'],
+                        ]
+                    );
                 }
             }
-
-            // Crear las enfermedades
+    
+            // Actualizar o crear las enfermedades
             foreach ($validated['listEnfermedades'] as $enfermedadData) {
-                $partida->enfermedades()->create([
-                    'name' => $enfermedadData['name'],
-                    'turnos_para_curarse' => $enfermedadData['turnosParaCurar'],
-                    'infeccion_a_colindandes' => $enfermedadData['infeccionAColindandes'],
-                    'partida_id'=>$partida->id
-                ]);
+                Enfermedad::updateOrCreate(
+                    [
+                        'name' => $enfermedadData['name'], 
+                        'partida_id' => $partida->id
+                    ],
+                    [
+                        'turnos_para_curarse' => $enfermedadData['turnosParaCurar'],
+                        'infeccion_a_colindandes' => $enfermedadData['infeccionAColindandes'],
+                    ]
+                );
             }
-
+    
             DB::commit();
             return response()->json($partida, 201);
-
+    
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -133,7 +158,7 @@ class PartidaController extends Controller
             ], 500);
         }
     }
-
+    
     // Obtener una partida con sus ciudades y enfermedades
     public function show(Request $request)
     {
